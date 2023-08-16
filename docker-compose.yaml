@@ -1,0 +1,32 @@
+services:
+
+  flask-server:
+    build: .
+    ports:
+      - 5001
+    depends_on:
+      - redis-cache
+    networks:
+      - app-net
+
+  reverse-proxy:
+    image: nginx:latest
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - flask-server 
+    ports:
+      - "5001:5002" # bound to host port, exposed app endpoint
+    networks:
+      - app-net
+
+  redis-cache:
+    image: redis:latest
+    ports:
+      - 6379 # port NOT bound to host port; virtual port on app-net
+    networks:
+      - app-net
+
+networks:
+  app-net:
+    driver: bridge
