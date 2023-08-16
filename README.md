@@ -40,7 +40,7 @@ Add the background flag `-d` to run the application in detached (background) mod
 The server is configured to listen on your host port `5001`, so you can ping the index
 page at `http://localhost:5001` to see which process is responding.
 
-Notes:
+# Notes
 
 - make sure that the flask apps are running on host '0.0.0.0' otherwise nothing can connect to them.
 - the nginx configuration for location '/' routes to all subdomains as well.
