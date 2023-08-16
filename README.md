@@ -20,10 +20,25 @@ If an extension of functionality is recommended that makes the application more 
 to understand for a beginner, I'd like to separate the applications into separate sub-folders.
 To be handled in the future, however.
 
-## Author
+# Author
 
 James Kunstle; jkunstle@redhat.com or jskunstle@gmail.com
 
+# Using
+
+Assuming that Docker and docker-compose are available on your machine, you can
+boot this application with four application servers with the command:
+
+`docker compose up --build --scale flask-server=4`
+
+If you're using Ubuntu or another Linux distro, the command is likely `sudo docker-compose ...`
+
+To bring the compose application down, simply `Ctl-c` to exit.
+
+Add the background flag `-d` to run the application in detached (background) mode.
+
+The server is configured to listen on your host port `5001`, so you can ping the index
+page at `http://localhost:5001` to see which process is responding.
 
 Notes:
 
