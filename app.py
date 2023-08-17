@@ -43,6 +43,13 @@ cache = Redis(host="redis-cache", port=6379)
 
 """
 OAUTH MANAGEMENT STUFF
+
+Credit to Miguel Grinberg's implementation:
+https://blog.miguelgrinberg.com/post/oauth-authentication-with-flask-in-2023
+
+Licensed MIT.
+
+His code made this implementation work very nicely.
 """
 
 
