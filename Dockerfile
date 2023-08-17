@@ -5,9 +5,11 @@ FROM python:3.11-alpine
 WORKDIR /flaskapp
 
 COPY ./app.py .
+COPY ./requirements.txt .
+COPY ./.env .
 
-# in lieu of a requirements.txt file
-RUN pip3 install Flask redis gunicorn
+# install requirements
+RUN pip3 install -r requirements.txt 
 
 # when using a real WSGI server
 # binds gunicorn to communicate on port 5001 (within container)

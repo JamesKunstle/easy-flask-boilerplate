@@ -1,5 +1,4 @@
 services:
-
   flask-server:
     build: .
     ports:
@@ -14,9 +13,9 @@ services:
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
-      - flask-server 
+      - flask-server
     ports:
-      - "5001:5002" # bound to host port, exposed app endpoint
+      - "5001:5001" # bound to host port, exposed app endpoint
     networks:
       - app-net
 
