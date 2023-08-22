@@ -5,8 +5,6 @@ These are high-level goals- issues should be created in their service.
 
 # List
 
-- Flask-Login w/ Redis as user session storage.
-- Add generic OAuth handling, /login and /register
 - Use Kompose to create Helm charts from docker-compose, or write bespoke.
 - Add celery background workers and configure correctly for reasonable-effor deployment
 
@@ -19,3 +17,5 @@ These are high-level goals- issues should be created in their service.
 - Run Flask app w/ gunicorn
 - Configure a non-default compose network
 - enable Flask app logging w/ 'logging' package
+- Flask-Login w/ Redis as user session storage.
+- Add generic OAuth handling, /login and /register
