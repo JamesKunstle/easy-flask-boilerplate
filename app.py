@@ -22,12 +22,12 @@ logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "top secret!"
 app.config["OAUTH2_PROVIDERS"] = {
-    "augur": {
+    os.environ.get("OAUTH_CLIENT_NAME"): {
         "client_id": os.environ.get("OAUTH_CLIENT_ID"),
         "client_secret": os.environ.get("OAUTH_CLIENT_SECRET"),
-        "authorize_url": "https://eightknot.chaoss.tv/user/authorize",
-        "token_url": "https://eightknot.chaoss.tv/api/unstable/user/session/generate",
-        "redirect_uri": "127.0.0.1:5001/callback",
+        "authorize_url": os.environ.get("OAUTH_AUTHORIZE_URL"),
+        "token_url": os.environ.get("OAUTH_TOKEN_URL"),
+        "redirect_uri": os.environ.get("OAUTH_REDIRECT_URI"),
     }
 }
 
@@ -83,7 +83,7 @@ def logout():
 
 @app.route("/authorize/")
 def oauth2_authorize():
-    provider = "augur"
+    provider = os.environ.get("OAUTH_CLIENT_NAME")
 
     if not current_user.is_anonymous:
         return redirect(url_for("index"))
@@ -111,7 +111,7 @@ def oauth2_authorize():
 
 @app.route("/callback/")
 def oauth2_callback():
-    provider = "augur"
+    provider = os.environ.get("OAUTH_CLIENT_NAME")
 
     if not current_user.is_anonymous:
         return redirect(url_for("index"))
