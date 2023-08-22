@@ -1,7 +1,6 @@
 flask
 flask-login
 flask-cors
-flask-bcrypt
 redis
 gunicorn
 requests

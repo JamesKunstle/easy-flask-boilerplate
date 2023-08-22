@@ -17,7 +17,6 @@ from flask_login import (
     login_required,
 )
 from flask_cors import CORS
-from flask_bcrypt import Bcrypt
 from urllib.parse import urlencode
 
 load_dotenv()
@@ -27,7 +26,7 @@ load_dotenv()
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 app = Flask(__name__)
-app.config["SECRET_KEY"] = "top secret!"
+app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY")
 app.config["OAUTH2_PROVIDERS"] = {
     os.environ.get("OAUTH_CLIENT_NAME"): {
         "client_id": os.environ.get("OAUTH_CLIENT_ID"),
@@ -44,9 +43,6 @@ CORS(app)
 # handles login
 login = LoginManager(app)
 login.login_view = "index"
-
-# hashing functionality
-bcrypt = Bcrypt(app)
 
 THREAD_ID = str(uuid.uuid1())
 
