@@ -1,7 +1,8 @@
 flask
 flask-login
+flask-cors
+flask-bcrypt
 redis
 gunicorn
 requests
 python-dotenv
-flask-cors

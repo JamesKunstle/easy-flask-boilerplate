@@ -4,11 +4,13 @@ import requests
 import secrets
 import sys
 import os
+import json
 from dotenv import load_dotenv
 from flask import Flask, url_for, redirect, abort, session, request, flash, current_app
 from redis import Redis
-from flask_login import current_user, LoginManager, logout_user
+from flask_login import current_user, LoginManager, logout_user, login_user, UserMixin
 from flask_cors import CORS
+from flask_bcrypt import Bcrypt
 from urllib.parse import urlencode
 
 load_dotenv()
@@ -29,10 +31,15 @@ app.config["OAUTH2_PROVIDERS"] = {
     }
 }
 
+# handles cross-origin resource sharing
 CORS(app)
 
+# handles login
 login = LoginManager(app)
 login.login_view = "index"
+
+# hashing functionality
+bcrypt = Bcrypt(app)
 
 APP_ID = str(uuid.uuid1())
 
@@ -53,10 +60,18 @@ His code made this implementation work very nicely.
 """
 
 
+class User(UserMixin):
+    def __init__(self, un_hash):
+        self.id = un_hash
+
+
 @login.user_loader
-def load_user(id):
+def load_user(un_hash):
     # return the JSON of a user that was set in the Redis instance
-    return cache.get(int(id))
+    if cache.exists(un_hash):
+        usn = json.loads(cache.get(un_hash))["username"]
+        return User(usn)
+    return None
 
 
 @app.route("/logout")
@@ -136,14 +151,51 @@ def oauth2_callback():
             "Authorization": f"Client {provider_data['client_secret']}",
         },
     )
+    logging.debug("Received response from authorize endpoint")
+
+    # check whether login worked
     if response.status_code != 200:
         abort(401)
-    oauth2_token = response.json().get("access_token")
+
+    # if login worked, get the token
+    resp = response.json()
+    oauth2_token = resp.get("access_token")
     if not oauth2_token:
         abort(401)
+    logging.debug("Got token from authorize endpoint")
+
+    # get remaining credentials
+    username = resp.get("username")
+    oauth2_refresh = resp.get("refresh_token")
+    oauth2_token_expires = resp.get("expires")
+
+    # TODO: find another hash that doesn't create new values.
+    # un_hash = bcrypt.generate_password_hash(username)
+    un_hash = username
+
+    if cache.exists(un_hash):
+        logging.debug("Updating user data")
+        user_ss_data = json.loads(cache.get(un_hash))
+        user_ss_data["access_token"] = oauth2_token
+        user_ss_data["refresh_token"] = oauth2_refresh
+        user_ss_data["expiration"] = oauth2_token_expires
+        cache.set(un_hash, json.dumps(user_ss_data))
+    else:
+        logging.debug("Creating new user")
+        user_ss_data = {
+            "username": username,
+            "access_token": oauth2_token,
+            "refresh_token": oauth2_refresh,
+            "expiration": oauth2_token_expires,
+        }
+        cache.set(un_hash, json.dumps(user_ss_data))
+
+    # TODO: have to log in the user object w.r.t the un_hash
+    login_user(User(un_hash))
+    logging.debug("User logged in")
 
     # return redirect(url_for("index"))
-    return f"YOU'RE LOGGED IN: {oauth2_token}"
+    return redirect(url_for("index"))
 
 
 """
@@ -153,7 +205,10 @@ BASIC ROUTES
 
 @app.route("/")
 def index():
-    logging.debug(f"{APP_ID} INDEX ROUTE HIT")
+    logging.debug(f"{APP_ID} INDEX ROUTE HIT, {current_user.get_id()}")
+    # return redirect(url_for("index"))
+    if current_user.is_authenticated:
+        return f"YOU'RE LOGGED IN: {current_user.get_id()}" + f" Flask Server {APP_ID}"
     return f"Flask Server {APP_ID}"
 
 
