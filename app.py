@@ -41,7 +41,7 @@ login.login_view = "index"
 # hashing functionality
 bcrypt = Bcrypt(app)
 
-APP_ID = str(uuid.uuid1())
+THREAD_ID = str(uuid.uuid1())
 
 # Redis' IP is discovered by DNS, connection done
 # by service name within another service
@@ -205,25 +205,27 @@ BASIC ROUTES
 
 @app.route("/")
 def index():
-    logging.debug(f"{APP_ID} INDEX ROUTE HIT, {current_user.get_id()}")
+    logging.debug(f"{THREAD_ID} INDEX ROUTE HIT, {current_user.get_id()}")
     # return redirect(url_for("index"))
     if current_user.is_authenticated:
-        return f"YOU'RE LOGGED IN: {current_user.get_id()}" + f" Flask Server {APP_ID}"
-    return f"Flask Server {APP_ID}"
+        return (
+            f"YOU'RE LOGGED IN: {current_user.get_id()}" + f" Flask Server {THREAD_ID}"
+        )
+    return f"Flask Server {THREAD_ID}"
 
 
 @app.route("/get")
 def get():
-    logging.debug(f"{APP_ID} GET ROUTE HIT")
+    logging.debug(f"{THREAD_ID} GET ROUTE HIT")
     val = cache.get("key")
-    return f"got {val}: {APP_ID}"
+    return f"got {val}: {THREAD_ID}"
 
 
 @app.route("/set/<value>")
 def set(value):
-    logging.debug(f"{APP_ID} SET ROUTE HIT")
+    logging.debug(f"{THREAD_ID} SET ROUTE HIT")
     cache.set("key", value)
-    return f"set {value}: {APP_ID}"
+    return f"set {value}: {THREAD_ID}"
 
 
 # won't be used if using Gunicorn as
