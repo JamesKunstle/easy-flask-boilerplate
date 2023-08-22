@@ -8,7 +8,14 @@ import json
 from dotenv import load_dotenv
 from flask import Flask, url_for, redirect, abort, session, request, flash, current_app
 from redis import Redis
-from flask_login import current_user, LoginManager, logout_user, login_user, UserMixin
+from flask_login import (
+    current_user,
+    LoginManager,
+    logout_user,
+    login_user,
+    UserMixin,
+    login_required,
+)
 from flask_cors import CORS
 from flask_bcrypt import Bcrypt
 from urllib.parse import urlencode
@@ -66,18 +73,21 @@ class User(UserMixin):
 
 
 @login.user_loader
-def load_user(un_hash):
+def load_user(id):
     # return the JSON of a user that was set in the Redis instance
-    if cache.exists(un_hash):
-        usn = json.loads(cache.get(un_hash))["username"]
-        return User(usn)
+    if cache.exists(id):
+        usn = json.loads(cache.get(id))["username"]
+        return User(id)
     return None
 
 
 @app.route("/logout")
 def logout():
-    logout_user()
-    flash("You have been logged out.")
+    if current_user.is_authenticated:
+        c_id = current_user.get_id()
+        cache.delete(c_id)
+        logout_user()
+        logging.debug(f"USER {c_id} LOGGED OUT")
     return redirect(url_for("index"))
 
 
@@ -169,29 +179,20 @@ def oauth2_callback():
     oauth2_refresh = resp.get("refresh_token")
     oauth2_token_expires = resp.get("expires")
 
-    # TODO: find another hash that doesn't create new values.
-    # un_hash = bcrypt.generate_password_hash(username)
-    un_hash = username
+    # random ID used to identify user.
+    id_number = str(uuid.uuid1())
 
-    if cache.exists(un_hash):
-        logging.debug("Updating user data")
-        user_ss_data = json.loads(cache.get(un_hash))
-        user_ss_data["access_token"] = oauth2_token
-        user_ss_data["refresh_token"] = oauth2_refresh
-        user_ss_data["expiration"] = oauth2_token_expires
-        cache.set(un_hash, json.dumps(user_ss_data))
-    else:
-        logging.debug("Creating new user")
-        user_ss_data = {
-            "username": username,
-            "access_token": oauth2_token,
-            "refresh_token": oauth2_refresh,
-            "expiration": oauth2_token_expires,
-        }
-        cache.set(un_hash, json.dumps(user_ss_data))
+    logging.debug("Creating new user")
+    serverside_user_data = {
+        "username": username,
+        "access_token": oauth2_token,
+        "refresh_token": oauth2_refresh,
+        "expiration": oauth2_token_expires,
+    }
+    cache.set(id_number, json.dumps(serverside_user_data))
 
     # TODO: have to log in the user object w.r.t the un_hash
-    login_user(User(un_hash))
+    login_user(User(id_number))
     logging.debug("User logged in")
 
     # return redirect(url_for("index"))
@@ -226,6 +227,13 @@ def set(value):
     logging.debug(f"{THREAD_ID} SET ROUTE HIT")
     cache.set("key", value)
     return f"set {value}: {THREAD_ID}"
+
+
+@app.route("/secret/")
+@login_required
+def secret_route():
+    usn = json.loads(cache.get(current_user.get_id()))["username"]
+    return f"Your username is: {usn}" + f" Flask Server {THREAD_ID}"
 
 
 # won't be used if using Gunicorn as
